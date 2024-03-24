@@ -1,8 +1,11 @@
 # Wildberries-parser
-Парсит данные с каталога с сайта https://www.wildberries.ru о товарах такие как: артикул, id поставщика, id продавца, цена, кол-во штук в наличии, рейтинг продавца и т.п
+Парсит данные с каталога с сайта https://www.wildberries.ru о товарах такие как: артикул, id поставщика, id продавца, цена, кол-во штук в наличии, рейтинг продавца и т.п.
 Получаем файл .xlsx на подобие данного: 
 
 ![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/8ec92a4c-acfe-4ebb-8cd8-83351d3de346)
+
+![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/4ebf677b-4d11-43e5-bdc8-801505fe11aa)
+
 
 Необходимые  библиотеки для работы библиотеки: requests, xlsxwriter:
 ---
