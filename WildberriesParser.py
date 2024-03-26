@@ -70,9 +70,9 @@ class Parser:
             response = requests.get(url = self.url)
 
 
-            if(response.status_code != 200):
-                page -= 1
+            if(response.status_code != 200):  
                 print(f"[x] страница №{page} HTTP {response.status_code}") 
+                page -= 1 
             elif response.text == '':
                 break
             else:
