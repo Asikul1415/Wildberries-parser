@@ -17,7 +17,7 @@ class Parser:
         wb_basket = self.__get_wb_basket()
         catalogs = self.__get_catalogs(wb_basket=wb_basket)
         
-        request_url = f"{self.__get_request_link(catalogs,url=url)}&page=1&appType=1&dest=-1257786"
+        request_url = f"{self.__get_request_link(catalogs,url=url)}&page=1&appType=1&dest=-1257786&limit=300"
         for parameter in parameters:
             if('page=' not in parameter):
                 request_url += f"&{parameter.removeprefix('f')}"
@@ -70,22 +70,19 @@ class Parser:
                 self.url = self.url.replace(f'&page={page-1}',f'&page={page}')
             response = requests.get(url = self.url)
 
-            print(response.status_code)
-            print(self.url)
 
-            if(response.status_code == 429):
-                print(response.content)
-                time.sleep(5)
+            if(response.status_code != 200):
                 page -= 1
-            elif response.status_code == 500:
-                response = requests.get(url = self.url)
-            elif response.json()['data']['products'] == []:
+                print(f"[x] страница №{page} HTTP {response.status_code}") 
+            elif response.text == '':
                 break
             else:
                 product = models.Items.parse_obj(obj = response.json()['data'])
-                if not product:
+                if product.products == []:
                     break
                 products.append(product)
+
+                print(f"[v] страница №{page}")
             page += 1
             
         self.__save_to_excel(Items= products)
