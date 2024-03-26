@@ -10,9 +10,20 @@ class Parser:
         self.url = self.__get_url(url= url)
     
     def __get_url(self,url: str) -> str:
+        parameters_temp = url.split('?')[1]
+        parameters = parameters_temp.split('&')
+        url = url.split('?')[0]
+
         wb_basket = self.__get_wb_basket()
         catalogs = self.__get_catalogs(wb_basket=wb_basket)
-        return f"{self.__get_request_link(catalogs,url=url)}&page=1&appType=1&dest=-1257786"
+        
+        request_url = f"{self.__get_request_link(catalogs,url=url)}&page=1&appType=1&dest=-1257786"
+        for parameter in parameters:
+            if('page=' not in parameter):
+                request_url += f"&{parameter.removeprefix('f')}"
+            else:
+                request_url.replace('page=1',parameter)
+        return request_url
 
     def __get_wb_basket(self) -> list:
         return requests.get(url = 
@@ -58,14 +69,18 @@ class Parser:
             if(page != 1): 
                 self.url = self.url.replace(f'&page={page-1}',f'&page={page}')
             response = requests.get(url = self.url)
+
             print(response.status_code)
             print(self.url)
+
             if(response.status_code == 429):
                 print(response.content)
                 time.sleep(5)
                 page -= 1
             elif response.status_code == 500:
                 response = requests.get(url = self.url)
+            elif response.json()['data']['products'] == []:
+                break
             else:
                 product = models.Items.parse_obj(obj = response.json()['data'])
                 if not product:
@@ -78,6 +93,7 @@ class Parser:
 
     def __get_products(self,Items : list[models.Items]) -> list[dict]:
         products = []
+        
         for page in Items:
             for product in page.products:
                 products.append({
@@ -114,12 +130,12 @@ class Parser:
                 
 
 if __name__ == '__main__':
-    url = 'https://www.wildberries.ru/catalog/muzhchinam/mayki'
+    url = 'https://www.wildberries.ru/catalog/muzhchinam/odezhda/dzhinsy?sort=rate&page=1'
     start = time.time()
     
     test = Parser(url=url)
-    test.parse(pages_count=30)
-    
+    test.parse(pages_count=50)
+
     end = time.time()
     print(f"Парсинг занял {round(end - start,4)} с")
     
