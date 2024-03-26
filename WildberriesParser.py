@@ -99,14 +99,14 @@ class Parser:
                     'Бренд' : product.brand,
                     'id бренда' : product.brandId,
                     'Название продукта' : product.name,
-                    'Название поставщика' : product.supplier,
-                    'id поставщика' : product.supplierId,
-                    'Рейтинг поставщика' : product.supplierRating,
                     'Рейтинг товара' : product.reviewRating,
                     'Кол-во отзывов о товаре' : product.feedbacks,
                     'В наличии' : product.volume,
                     'Цена без скидки' : product.sizes[0].price.basic,
-                    'Цена со скдикой' : product.sizes[0].price.total    
+                    'Цена со скдикой' : product.sizes[0].price.total,   
+                    'Название поставщика' : product.supplier,
+                    'id поставщика' : product.supplierId,
+                    'Рейтинг поставщика' : product.supplierRating,
                 }) 
         return products   
 
