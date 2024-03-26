@@ -46,7 +46,7 @@ print(f"Парсинг занял {round(end - start,4)} с")
 
 ### 3) Запускаем код, ждём пока он выполнится:
 
-![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/cf840dcc-57de-4bba-8210-9139b82ada6b)
+![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/9c81deec-fd57-4c31-a236-71658f4225d7)
 
 ### 4) В директории куда вы всё скачали, ищем файл wb_data.xlsx
 
@@ -54,7 +54,7 @@ print(f"Парсинг занял {round(end - start,4)} с")
 
 ### 5) Наслаждаемся проделанной работой
 
-![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/916f9b16-cd52-4688-87c2-d9a891955a4b)
+![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/bb5e1552-921b-4166-8c47-adb379c2b55e)
 
 
     
