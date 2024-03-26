@@ -93,7 +93,7 @@ class Parser:
 
     def __get_products(self,Items : list[models.Items]) -> list[dict]:
         products = []
-        
+
         for page in Items:
             for product in page.products:
                 products.append({
@@ -129,13 +129,12 @@ class Parser:
     
                 
 
-if __name__ == '__main__':
-    url = 'https://www.wildberries.ru/catalog/muzhchinam/odezhda/dzhinsy?sort=rate&page=1'
-    start = time.time()
-    
-    test = Parser(url=url)
-    test.parse(pages_count=50)
+url = 'ваш url'
+start = time.time()
 
-    end = time.time()
-    print(f"Парсинг занял {round(end - start,4)} с")
+test = Parser(url=url)
+test.parse(pages_count=50)
+
+end = time.time()
+print(f"Парсинг занял {round(end - start,4)} с")
     
