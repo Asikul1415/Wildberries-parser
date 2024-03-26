@@ -2,21 +2,57 @@ import requests
 import time
 import models
 import pandas as pd
+import math
 
 class Parser: 
 
-    def __init__(self,cURL:str):
-        self.url = self.__get_url(cURL= cURL)
+    def __init__(self,url:str):
+        self.url = self.__get_url(url= url)
     
-    def __get_url(self,cURL: str) -> str:
-        url = cURL.split('\'')[1]
-        if '&page=' not in url:
-            url += '&page=1'
-        return url 
+    def __get_url(self,url: str) -> str:
+        wb_basket = self.__get_wb_basket()
+        catalogs = self.__get_catalogs(wb_basket=wb_basket)
+        return f"{self.__get_request_link(catalogs,url=url)}&page=1&appType=1&dest=-1257786"
+
+    def __get_wb_basket(self) -> list:
+        return requests.get(url = 
+        'https://static-basket-01.wbbasket.ru/vol0/data/main-menu-ru-ru-v2.json').json()
+
+    def __get_catalogs_data(self,catalog: list) -> list:
+        catalog_data = []
+
+        if('childs' in catalog):
+            for child in catalog['childs']:
+                catalog_data.extend(self.__get_catalogs_data(child))
+            return catalog_data
+
+        elif('shard' in catalog and 'query' in catalog and 'url' in catalog):
+            return [{
+                'shard': catalog['shard'],
+                'query': catalog['query'],
+                'url' : catalog['url']}]
+        else:
+            return ['blackhole']
+    
+    def __get_catalogs(self,wb_basket: dict):
+        catalogs = []
+
+        for catalog in wb_basket:
+            child_data = self.__get_catalogs_data(catalog= catalog)
+            catalogs.extend(child_data)
+
+        return catalogs
+
+    def __get_request_link(self, catalogs: list,url: str) -> str:
+        for catalog in catalogs:
+            if('shard' in catalog and 'query' in catalog):
+                if(catalog['url'] == url.split('https://www.wildberries.ru')[1]):
+                    return f"https://catalog.wb.ru/catalog/{catalog['shard']}/v2/catalog?{catalog['query']}"
 
     def parse(self,pages_count: int) -> None:
         page = 1
         products = []
+        print(self.url)
 
         while page <= pages_count:
             if(page != 1): 
@@ -73,23 +109,17 @@ class Parser:
             writer.sheets['Продукты'].set_column(col_idx, col_idx, column_length)
         
         writer.close()
-
+    
+    
+                
 
 if __name__ == '__main__':
-    cURL = """curl 'https://catalog.wb.ru/catalog/electronic22/v2/catalog?appType=1&curr=rub&dest=-1257786&sort=pricedown&spp=30&subject=515' \
-  -H 'Accept: */*' \
-  -H 'Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7' \
-  -H 'Connection: keep-alive' \
-  -H 'Origin: https://www.wildberries.ru' \
-  -H 'Referer: https://www.wildberries.ru/catalog/elektronika/smartfony-i-telefony/vse-smartfony' \
-  -H 'Sec-Fetch-Dest: empty' \
-  -H 'Sec-Fetch-Mode: cors' \
-  -H 'Sec-Fetch-Site: cross-site' \
-  -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 OPR/107.0.0.0' \
-  -H 'sec-ch-ua: "Not A(Brand";v="99", "Opera GX";v="107", "Chromium";v="121"' \
-  -H 'sec-ch-ua-mobile: ?0' \
-  -H 'sec-ch-ua-platform: "Windows"' \
-  --compressed"""
-    test = Parser(cURL=cURL)
-    test.parse(pages_count=50)
-
+    url = 'https://www.wildberries.ru/catalog/muzhchinam/mayki'
+    start = time.time()
+    
+    test = Parser(url=url)
+    test.parse(pages_count=30)
+    
+    end = time.time()
+    print(f"Парсинг занял {round(end - start,4)} с")
+    
