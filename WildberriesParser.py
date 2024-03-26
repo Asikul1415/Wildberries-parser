@@ -2,7 +2,6 @@ import requests
 import time
 import models
 import pandas as pd
-import math
 
 class Parser: 
 
