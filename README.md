@@ -1,63 +1,33 @@
-# Wildberries-parser
-Парсит данные с каталога с сайта https://www.wildberries.ru о товарах такие как: артикул, id поставщика, id продавца, цена, кол-во штук в наличии, рейтинг продавца и т.п.
-Получаем файл .xlsx на подобие данного: 
+# Wildberries-parser async
+## Разница между обычным парсером и асинхронным:
 
-![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/8ec92a4c-acfe-4ebb-8cd8-83351d3de346)
+![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/8e03236d-b9fe-42fb-8536-8b937fb0fe69)
 
-![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/4ebf677b-4d11-43e5-bdc8-801505fe11aa)
-
-
-Необходимые  библиотеки для работы библиотеки: requests, xlsxwriter:
+Асинхронный спарсил это за 14.9 секунд
 ---
 
-```html
-  pip install requests
-```
+![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/009ccb9d-5ee3-46e9-a1df-ccd109d64c0b)
 
-```html
-  pip install xlsxwriter
-```
+Обычный спарсил этот же каталог за 37.8 секунд
+---
 
+### Но теперь про главную проблему асинхронного парсера:
 
-Как работать с этим
-====================
-Вот пример работы с данным парсером. 
+![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/7008abf8-3e4c-4eb3-be20-4ea6fd0fe9b2)
 
-### 1) Открываем Wildberries в интересующем нам каталоге с уже применёнными нами фильтрами, копируем ссылку:
+Асинхронный спасрил 20513 товаров
+---
 
-![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/a5563ce0-b658-4573-8e40-cdf48801af18)
+![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/9bafad12-8a14-49be-839f-6061597d8132)
 
-### 2) Открываем WildberriesParser.py, и вставляем скопированную ссылку в переменную url:
+В то время как обычный спарсил все 21729 товаров
+---
 
-![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/f128c1f6-37c3-4ac1-8de2-eae53bc60ffd)
-
-Код примера если нужно)
-```html
-url = 'сюда свой url'
-start = time.time()
-
-test = Parser(url=url)
-test.parse(pages_count=50)
-
-end = time.time()
-print(f"Парсинг занял {round(end - start,4)} с")
-```
+И это ещё неплохой случай, тут разница всего в 1200 товаров, а бывает что она достигает 2-3 тысяч. Я точно не знаю почему некоторые рабочие страницы сервер WB отдаёт с кодом 200 и пустым json асинхронному, в то время как обычному если он такое и отдаёт, то эта страница пустая и товары уже кончились. Здесь же подобную ошибку можно и на 4 странице поймать из 74. Пробовал ограничивать кол-во запросов в единицу времени путём Semasphore, но разницы нету абсолютно никакой.
 
 
-### 3) Запускаем код, ждём пока он выполнится:
-
-![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/9c81deec-fd57-4c31-a236-71658f4225d7)
-
-### 4) В директории куда вы всё скачали, ищем файл wb_data.xlsx
-
-![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/f45a5b28-138e-4968-b2e0-96220e2f41c7)
-
-### 5) Наслаждаемся проделанной работой
-
-![image](https://github.com/Asikul1415/Wildberries-parser/assets/83174848/bb5e1552-921b-4166-8c47-adb379c2b55e)
 
 
-    
 
 
 
