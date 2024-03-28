@@ -9,8 +9,10 @@ class Parser:
         self.url = self.__get_url(url= url)
     
     def __get_url(self,url: str) -> str:
-        parameters_temp = url.split('?')[1]
-        parameters = parameters_temp.split('&')
+        parameters = []
+        if('?' in url):
+            parameters_temp = url.split('?')[1]
+            parameters = parameters_temp.split('&')
         url = url.split('?')[0]
 
         wb_basket = self.__get_wb_basket()
@@ -125,7 +127,7 @@ class Parser:
     
                 
 
-url = 'ваш url'
+url = 'https://www.wildberries.ru/catalog/muzhchinam/odezhda/dzhinsy'
 start = time.time()
 
 test = Parser(url=url)
