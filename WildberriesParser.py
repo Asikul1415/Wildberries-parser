@@ -81,17 +81,20 @@ class Parser:
     def parse(self,pages_count: int) -> None:
         page = 1
         products = []
+        attempts = 0
 
         while page <= pages_count:
             if(page != 1): 
                 self.url = self.url.replace(f'&page={page-1}',f'&page={page}')
-            response = requests.get(url = self.url,headers=self.headers)
+            response = requests.get(url = self.url)
 
 
-            if(response.status_code != 200):  
-                print(f"[x] страница №{page} HTTP {response.status_code}",end='\r')  
+            if(response.status_code != 200) or (response.status_code == 200 and response.text == ''):  
+                print(f"[X] страница №{page} HTTP {response.status_code}",end='\r')  
                 page -= 1 
-            elif response.text == '':
+                if (response.status_code == 200 and response.text == ''):
+                    attempts += 1
+            elif response.text == '' and attempts >= 5:
                 break
             else:
                 product = models.Items.parse_obj(obj = response.json()['data'])
@@ -99,7 +102,8 @@ class Parser:
                     break
                 products.append(product)
 
-                print(f"[v] страница №{page} HTTP {response.status_code}",end='\r') 
+                print(f"[V] страница №{page} HTTP {response.status_code}",end='\r') 
+                attempts = 0
             page += 1
         self.__save_to_excel(Items= products)
 
@@ -127,6 +131,7 @@ class Parser:
 
 
     def __save_to_excel(self, Items: list[dict]) -> None:
+        print("Формирование файла wb_data.xlsx ...")
         df = pd.DataFrame(self.__get_products(Items=Items))
         writer = pd.ExcelWriter(f'{self.path}\wb_data.xlsx', engine='xlsxwriter')
         df.to_excel(writer, sheet_name='Продукты',index=False,na_rep='NaN')
@@ -136,18 +141,22 @@ class Parser:
             column_length = max(df[column].astype(str).map(len).max(), len(column))
             col_idx = df.columns.get_loc(column)
             writer.sheets['Продукты'].set_column(col_idx, col_idx, column_length)
-        
+        print(f"\nВсё спарсилось, ищите wb_data.xlsx по пути {self.path}\wb_data.xlsx")
         writer.close()
     
     
                 
 
-url = 'https://www.wildberries.ru/catalog/muzhchinam/odezhda/dzhinsy'
+os.system('cls')
+url = input("Вставьте ссылку на каталог: ")
+pages_count = int(input("\nСколько страниц парсить? (больше 100 сервера не отдают): "))
+
 start = time.time()
 
-test = Parser(url=url)
-test.parse(pages_count=120)
+parser = Parser(url=url)
+parser.parse(pages_count=pages_count)
 
 end = time.time()
 print(f"\nПарсинг занял {round(end - start,4)} с")
+time.sleep(5)
     
