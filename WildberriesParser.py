@@ -2,12 +2,28 @@ import requests
 import time
 import models
 import pandas as pd
+import os
 
 class Parser: 
 
     def __init__(self,url:str):
         self.url = self.__get_url(url= url)
-    
+        self.path = os.path.dirname(os.path.realpath(__file__))
+        self.headers = {
+        'Accept': '*/*',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Connection': 'keep-alive',
+        'Origin': 'https://www.wildberries.ru',
+        'Referer': f'{url}',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'cross-site',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 OPR/107.0.0.0',
+        'sec-ch-ua': '"Not A(Brand";v="99", "Opera GX";v="107", "Chromium";v="121"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',}
+
+
     def __get_url(self,url: str) -> str:
         parameters = []
         if('?' in url):
@@ -29,7 +45,7 @@ class Parser:
     def __get_wb_basket(self) -> list:
         return requests.get(url = 
         'https://static-basket-01.wbbasket.ru/vol0/data/main-menu-ru-ru-v2.json').json()
-
+    
     def __get_catalogs_data(self,catalog: list) -> list:
         catalog_data = []
 
@@ -45,7 +61,7 @@ class Parser:
                 'url' : catalog['url']}]
         else:
             return ['blackhole']
-    
+
     def __get_catalogs(self,wb_basket: dict):
         catalogs = []
 
@@ -61,19 +77,19 @@ class Parser:
                 if(catalog['url'] == url.split('https://www.wildberries.ru')[1]):
                     return f"https://catalog.wb.ru/catalog/{catalog['shard']}/v2/catalog?{catalog['query']}"
 
+
     def parse(self,pages_count: int) -> None:
         page = 1
         products = []
-        print(self.url)
 
         while page <= pages_count:
             if(page != 1): 
                 self.url = self.url.replace(f'&page={page-1}',f'&page={page}')
-            response = requests.get(url = self.url)
+            response = requests.get(url = self.url,headers=self.headers)
 
 
             if(response.status_code != 200):  
-                print(f"[x] страница №{page} HTTP {response.status_code}") 
+                print(f"[x] страница №{page} HTTP {response.status_code}",end='\r')  
                 page -= 1 
             elif response.text == '':
                 break
@@ -83,11 +99,9 @@ class Parser:
                     break
                 products.append(product)
 
-                print(f"[v] страница №{page}")
+                print(f"[v] страница №{page} HTTP {response.status_code}",end='\r') 
             page += 1
-            
         self.__save_to_excel(Items= products)
-    
 
     def __get_products(self,Items : list[models.Items]) -> list[dict]:
         products = []
@@ -111,9 +125,10 @@ class Parser:
                 }) 
         return products   
 
+
     def __save_to_excel(self, Items: list[dict]) -> None:
         df = pd.DataFrame(self.__get_products(Items=Items))
-        writer = pd.ExcelWriter('wb_data.xlsx', engine='xlsxwriter')
+        writer = pd.ExcelWriter(f'{self.path}\wb_data.xlsx', engine='xlsxwriter')
         df.to_excel(writer, sheet_name='Продукты',index=False,na_rep='NaN')
 
         #автоматическая подстройка размеров колонок в excel
@@ -131,8 +146,8 @@ url = 'https://www.wildberries.ru/catalog/muzhchinam/odezhda/dzhinsy'
 start = time.time()
 
 test = Parser(url=url)
-test.parse(pages_count=50)
+test.parse(pages_count=120)
 
 end = time.time()
-print(f"Парсинг занял {round(end - start,4)} с")
+print(f"\nПарсинг занял {round(end - start,4)} с")
     
