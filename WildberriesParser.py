@@ -1,3 +1,4 @@
+import os
 import requests
 import time
 import models
@@ -11,6 +12,21 @@ class Parser:
         self.url = self.__get_url(url= url)
         self.pages_count = pages_count 
         self.products = []
+        self.pages = asyncio.Queue()
+        self.path = os.path.dirname(os.path.realpath(__file__))
+        self.headers = {
+        'Accept': '*/*',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Connection': 'keep-alive',
+        'Origin': 'https://www.wildberries.ru',
+        'Referer': 'https://www.wildberries.ru/catalog/aksessuary/zonty',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'cross-site',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 OPR/107.0.0.0',
+        'sec-ch-ua': '"Not A(Brand";v="99", "Opera GX";v="107", "Chromium";v="121"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',}
     
     def __get_url(self,url: str) -> str:
         parameters = []
@@ -67,25 +83,34 @@ class Parser:
                     return f"https://catalog.wb.ru/catalog/{catalog['shard']}/v2/catalog?{catalog['query']}"
 
 
-    async def parse(self,page: int,session: aiohttp.ClientSession) -> None:
+    async def parse_page(self,page: int,session: aiohttp.ClientSession, attempts = 5) -> None:
         url = self.url.replace(f'&page=1',f'&page={page}')
+        await asyncio.sleep(2)
         
         async with session.get(url=url) as response:
             html = await response.text()
             status_code = response.status
             
-            if(status_code != 200):  
+            if(status_code != 200) or (status_code == 200 and html == ''):  
                 print(f"[x] страница №{page} HTTP {status_code}")
-                await self.parse(page=page,session=session)
-            elif html == '':
+                if (status_code == 200 and html == ''):
+                    await self.parse_page(page=page,session=session,attempts=attempts-1)
+                else:
+                    await self.parse_page(page=page,session=session)
+            elif html == '' and attempts > 0:
                 return
             else:
                 json = await response.json()
                 product_temp = models.Items.parse_obj(obj = json['data'])
                 self.products.append(product_temp)
-
                 print(f"[v] страница №{page}")
-        
+
+    async def parse(self,page:int, session: aiohttp.ClientSession) -> None:
+        async with asyncio.Semaphore(2):
+            page = await self.pages.get()
+            await self.parse_page(page=page,session=session)
+            await asyncio.sleep(2)
+
     
 
     def __get_products(self,Items : list[models.Items]) -> list[dict]:
@@ -111,8 +136,9 @@ class Parser:
         return products   
 
     def save_to_excel(self, Items: list[dict]) -> None:
+        print("Формирование файла wb_data.xlsx ...")
         df = pd.DataFrame(self.__get_products(Items=Items))
-        writer = pd.ExcelWriter('wb_data.xlsx', engine='xlsxwriter')
+        writer = pd.ExcelWriter(f'{self.path}\wb_data.xlsx', engine='xlsxwriter')
         df.to_excel(writer, sheet_name='Продукты',index=False,na_rep='NaN')
 
         #автоматическая подстройка размеров колонок в excel
@@ -120,14 +146,18 @@ class Parser:
             column_length = max(df[column].astype(str).map(len).max(), len(column))
             col_idx = df.columns.get_loc(column)
             writer.sheets['Продукты'].set_column(col_idx, col_idx, column_length)
-        
+        print(f"\nВсё спарсилось, ищите wb_data.xlsx по пути {self.path}\wb_data.xlsx")
         writer.close()
     
     async def gather_data(self):
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self.headers,
+            connector=aiohttp.TCPConnector(limit=2)) as session:
             tasks = []
-
+            
+            if(self.pages_count > 100):
+                self.pages_count = 100
             for page in range(1,self.pages_count + 1):
+                await self.pages.put(page)
                 task = asyncio.create_task(self.parse(page=page,session=session))
                 tasks.append(task)
             
@@ -137,13 +167,17 @@ class Parser:
     
                 
 
-url = 'https://www.wildberries.ru/catalog/muzhchinam/odezhda/dzhinsy'
+os.system('cls')
+url = input("Вставьте ссылку на каталог: ")
+pages_count = int(input("\nСколько страниц парсить? (больше 100 сервера не отдают): "))
+
 start = time.time()
 
-test = Parser(url=url,pages_count=120)
-asyncio.run(test.gather_data())
-test.save_to_excel(Items= test.products)
+parser = Parser(url=url, pages_count=pages_count)
+asyncio.run(parser.gather_data())
+parser.save_to_excel(Items=parser.products)
 
 end = time.time()
-print(f"Парсинг занял {round(end - start,4)} с")
+print(f"\nПарсинг занял {round(end - start,4)} с")
+time.sleep(5)
     
